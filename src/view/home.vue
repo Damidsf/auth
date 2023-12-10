@@ -82,8 +82,8 @@
 </template>
 <script lang='ts' setup>
 import unLogin from "@/components/home/myApplication.vue"
-import { getUserData } from '@/api/index';
-import { onMounted, ref, watch } from 'vue';
+import { getUserInfo, getAuthorities } from '@/api/index';
+import { onMounted, ref, watch, onBeforeMount } from 'vue';
 import { useStore } from '@/store';
 import {
   Menu as IconMenu,
@@ -94,37 +94,48 @@ import {
 } from '@element-plus/icons-vue'
 import router from '@/router';
 
-const store = useStore()
+onBeforeMount(async () => {
+  await _getUserInfo()
+  await _getAuthorities()
+})
+const userData = ref()
+const _getUserInfo = async () => {
+  const res = await getUserInfo().catch(err => console.warn(err))
+  if (!res) return
+  if (res.data.status) {
+    userData.value = res.data.data
+    console.log("获取用户数据", res.data.data);
 
-
-
-//用户信息和操作
-
-const is_login = ref<boolean>(false)
-const username = ref<string>('')
-const inputOriginPwd = ref<string>('')
-
-
-
-
-onMounted(async () => {
-  if (store.isLogin) {
-    router.push("/home/userApplication")
   }
 
-  console.log(inputOriginPwd);
-  if (localStorage.getItem("access-token")) {
-    const { data } = await getUserData()
-    if (data.code == '401') {
-      console.log("还未登录");
-    } else {
-      console.log(data);
-      username.value = data.userData.username
-      is_login.value = true
-    }
-  } else {
-    console.log("还未登录");
+}
 
+const userAuth = ref("")
+const _getAuthorities = async () => {
+  const res = await getAuthorities().catch(err => console.warn(err))
+  if (!res) return
+  if (res.data.status) {
+    userAuth.value = res.data.data[0]
+    if (userAuth.value == "ROLE_ADMIN") {
+      store.isAdmain = true
+    } else {
+      store.isAdmain = false
+    }
+
+
+  } else {
+    console.log("无法获取身份信息");
+
+  }
+}
+const store = useStore()
+onMounted(async () => {
+  if (store.isLogin) {
+    if (store.isAdmain) {
+      router.push("/home/adminApplycation")
+    } else {
+      router.push("/home/userApplication")
+    }
   }
 })
 

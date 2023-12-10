@@ -1,19 +1,19 @@
 <template>
   <div class="header">
     <div class="left">
-      <div @click="goHome">首页 </div>
-      <div @click="store.isAdmain = !store.isAdmain">切换角色 </div>
+      <div @click="goHome">首页</div>
+      <div @click="store.isAdmain = !store.isAdmain">切换角色</div>
     </div>
     <div class="right">
       <div @click="goLogin" v-if="!isLogin">
-        <el-icon size="30px" style="transform: translateY(5px);">
+        <el-icon size="30px" style="transform: translateY(5px)">
           <User />
         </el-icon>
         登录
       </div>
 
       <div v-else>
-        <el-icon size="30px" style="transform: translateY(5px);">
+        <el-icon size="30px" style="transform: translateY(5px)">
           <User />
         </el-icon>
         个人中心
@@ -22,25 +22,25 @@
   </div>
 </template>
 <script lang='ts' setup>
-import { User } from '@element-plus/icons-vue'
-import { useRouter, useRoute } from 'vue-router';
-import { useStore } from '@/store';
-const router = useRouter()
-const route = useRoute()
-const store = useStore()
+import { User } from "@element-plus/icons-vue";
+import { useRouter, useRoute } from "vue-router";
+import { useStore } from "@/store";
+const router = useRouter();
+const route = useRoute();
+const store = useStore();
 defineProps({
   isLogin: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 const goHome = () => {
-  if (route.path == "/home") return
-  router.push('/')
-}
+  if (route.path == "/home") return;
+  router.push("/");
+};
 const goLogin = async () => {
-  router.push("/login")
-}
+  router.push("/login");
+};
 </script>
 <style lang='scss' scoped>
 .header {
@@ -51,9 +51,7 @@ const goLogin = async () => {
   background-color: black;
   color: white;
 
-
   .left {
-
     height: 100%;
     width: auto;
     display: flex;
@@ -65,7 +63,6 @@ const goLogin = async () => {
       line-height: 10vh;
       cursor: pointer;
     }
-
   }
 
   .right {
@@ -81,6 +78,5 @@ const goLogin = async () => {
       cursor: pointer;
     }
   }
-
 }
 </style>

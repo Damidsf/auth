@@ -1,41 +1,56 @@
-import { $axios, resourceAxios, serverAxios } from "@/util/request";
+import { serverAxios } from "@/util/request";
 
-
-export const login = (username: string, password: string) => {
-  return $axios.post("/user/login", { username, password })
+//获取公钥
+export const getPublicKey = () => {
+  return serverAxios.get("/getkey")
 }
 
-export const register = (username: string, password: string) => {
-  return $axios.post("/user/register", { username, password })
+//用户获取自己信息
+export const getUserInfo = () => {
+  return serverAxios.get("/user/userinfo")
 }
-
-export const tokenTest = () => {
-  return $axios.post("/user/testToken")
-}
-
-export const logout = () => {
-  return $axios.post("/user/logout")
-}
-
-export const getUserData = () => {
-  return $axios.get("/data/getuserdata")
-}
-
-export const changePassword = (originPassword: string, changePassword: string) => {
-  return $axios.post("/user/changepassword", { originPassword, changePassword })
-}
-
-
-
 
 //登录
-export const ilogin = (username: string, password: string) => {
-  return serverAxios.post("/login", { username, password })
+export const login = (username: string, password: string, uuid: string, key: string) => {
+  return serverAxios.post("/doLogin", { username, password, uuid, key })
+}
+
+//注册
+export const register = (username: string, password: string, uuid: string, key: string) => {
+  return serverAxios.post("/doLogin", { username, password, uuid, key })
+}
+
+//获取权限信息
+export const getAuthorities = () => {
+  return serverAxios.get("/user/authorities")
+}
+
+//退出登录
+export const logout = () => {
+  return serverAxios.delete("/logout")
+}
+
+//获取用户列表
+export const getUserList = (pageOffSize: number, pageSize: number) => {
+  return serverAxios.get("/admin/getUserList", { params: { pageOffSize, pageSize } })
+}
+
+//删除用户
+export const deleteUser = (uuid: string) => {
+  return serverAxios.delete("/admin/deleteAccount", { params: { uuid } })
+}
+
+//管理员修改其他用户信息
+export const getUserDataByUuid = (uuid: string) => {
+  return serverAxios.get("/admin/userByUuid", { params: { uuid } })
+}
+
+//用户修改自己信息
+export const updateUserInfo = (username: string, phone: string) => {
+  return serverAxios.post("/user/updateInfo", { username, phone })
 }
 
 
 
-//获取服务器资源
-export const getResource = () => {
-  return resourceAxios.get("/res1")
-}
+
+

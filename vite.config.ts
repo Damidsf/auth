@@ -23,11 +23,6 @@ export default defineConfig({
         changeOrigin: true, //需要代理跨域
         rewrite: (path) => path.replace(/^\/serverApi/, ''), //路径重写，把'/api'替换为''
       },
-      "/resourceApi": {
-        target: "http://23a603ae.r5.cpolar.top", //目标域名
-        changeOrigin: true, //需要代理跨域
-        rewrite: (path) => path.replace(/^\/resourceApi/, ''), //路径重写，把'/api'替换为''
-      },
     }
   }
 })

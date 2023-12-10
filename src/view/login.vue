@@ -28,28 +28,20 @@
           <el-input type="password" v-model="ruleForm.password" size="large" />
         </el-form-item>
         <el-button style="width: 390px;height: 40px;font-size: 20px;margin-left: 55px;margin-top: 10px;" type="primary"
-          @click="submitForm(ruleFormRef)">
+          @click="submitFormLogin(ruleFormRef)">
           登录
         </el-button>
+        <el-button style="width: 390px;height: 40px;font-size: 20px;margin-left: 55px;margin-top: 10px;" type="primary"
+          @click="submitFormRegister(ruleFormRef)">
+          注册
+        </el-button>
         <!-- <el-link :underline="false" type="primary" @click="goRegister" style="margin-right: 200px;">还没有账号?前往注册</el-link> -->
-        <el-link style="margin-left: 60px;margin-top: 10px;" :underline="false" type="primary"
-          @click="forgetPwd">忘记密码</el-link>
-
-        <div style="width: 80%;height: 10px;margin: 10px 80px;">
-          <div>———————其他方式登录———————</div>
-        </div>
-        <el-form-item class="other" style="display: flex;">
-          <div></div>
-          <div></div>
-          <div style="position: absolute;right: 20px;top: 20px;cursor: pointer;">管理员登录</div>
-        </el-form-item>
-
-
+        <!-- <el-link style="margin-left: 60px;margin-top: 10px;" :underline="false" type="primary">忘记密码</el-link> -->
       </el-form>
 
 
       <!-- 修改密码框 -->
-      <el-dialog v-model="dialogFormVisible" title="重置密码" width="600px">
+      <!-- <el-dialog v-model="dialogFormVisible" title="重置密码" width="600px">
         <el-form :model="form">
           <el-form-item label="手机号" :label-width="formLabelWidth">
             <el-input v-model="form.phone" autocomplete="off" />
@@ -71,20 +63,47 @@
             </el-button>
           </span>
         </template>
-      </el-dialog>
+      </el-dialog> -->
     </div>
   </div>
 </template>
 <script lang='ts' setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, onBeforeMount } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { ilogin } from '@/api';
-import { useRouter, useRoute } from "vue-router"
+import { login, getPublicKey, register } from '@/api';
+import { useRouter } from "vue-router"
 import { ElMessage } from 'element-plus'
 import { encrypt_SM4 } from "@/util/crypto"
+onBeforeMount(async () => {
+  await _getPublicKey()
+  await setTimer()
+})
+const timer = ref()
+const setTimer = () => {
+  timer.value = setInterval(async () => {
+    await _getPublicKey()
+  }, 300000)
+}
+interface RSADATA {
+  uuid: string,
+  n: string,
+  e: string
+}
+const RSACurrent = ref<RSADATA>({ uuid: "", n: "", e: "" })
+const _getPublicKey = async () => {
+  const res = await getPublicKey().catch(err => console.warn(err))
+  if (!res) {
+    openWarning("获取失败")
+    return
+  }
+  if (res.data.status) {
+    const RSAData = res.data.data
+    RSACurrent.value = RSAData
+  }
+}
+
 
 const tabNum = ref(0)
-
 const openWarning = (text: string) => {
   ElMessage({
     message: text,
@@ -98,7 +117,6 @@ const openSuccess = (text: string) => {
   })
 }
 const router = useRouter()
-const route = useRoute()
 interface RuleForm {
   sno: string,
   phone: string,
@@ -127,8 +145,7 @@ const rules = reactive<FormRules<RuleForm>>({
 
 })
 
-const submitForm = async (formEl: FormInstance | undefined) => {
-  console.log(formEl);
+const submitFormLogin = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
 
   await formEl.validate(async (valid) => {
@@ -139,85 +156,118 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       username = ruleForm.sno
     }
     if (valid) {
-      //加密
-      const res = encrypt_SM4(ruleForm.password)
-      //判断学号或者手机号为纯数字
-      if (!(username === parseInt(username).toString())) {
-        openWarning(tabNum.value ? "手机号格式不正确" : "学号格式不正确")
+      const { e, n, uuid } = RSACurrent.value
+      const sm4Key = randomSM4Key()
+      const sm4Res = encrypt_SM4(ruleForm.password, sm4Key)
+      const RSARes = modPow(BigInt(sm4Key), BigInt(e), BigInt(n)).toString()
+      const res = await login(username, sm4Res, uuid, RSARes).catch(err => { openWarning("登录错误"); console.warn(err); return })
+      if (!res) {
+        openWarning("登录错误")
         return
       }
-      ilogin(username, res).then((res) => {
-        console.log(res.data);
-
-        console.log("登录成功");
-        localStorage.setItem("access_i_token", res.data.access_token)
-        const toPath = route.query.to
+      if (res.data.status) {
+        localStorage.setItem("access-token", res.data.data)
         openSuccess("登录成功")
-        if (toPath) {
-          router.push(`/${toPath}`)
-        } else {
-          router.push("/")
-        }
-      }).catch(() => {
-        console.log('登录失败');
-        openWarning(tabNum.value ? "手机号或密码不正确" : "学号或密码不正确")
-      })
-      // const { data } = await login(ruleForm.username, ruleForm.password)
+        router.push("/")
+      } else {
+        openWarning("登录失败")
+      }
+    } else {
+      return
+    }
+  })
+}
+const submitFormRegister = async (formEl: FormInstance | undefined) => {
+  if (!formEl) return
 
-      // if (data.code == 200) {
-      //   localStorage.setItem("access-token", data.tokenValue)
-      //   const toPath = route.query.to
-      //   openSuccess(data.message)
-      //   if (toPath) {
-      //     router.push(`/${toPath}`)
-      //   } else {
-      //     router.push("/")
-      //   }
-      // } else {
-      //   openWarning(data.message)
-      // }
-
+  await formEl.validate(async (valid) => {
+    let username: string
+    if (tabNum.value) {
+      username = ruleForm.phone
+    } else {
+      username = ruleForm.sno
+    }
+    if (valid) {
+      const { e, n, uuid } = RSACurrent.value
+      const sm4Key = randomSM4Key()
+      const sm4Res = encrypt_SM4(ruleForm.password, sm4Key)
+      const RSARes = modPow(BigInt(sm4Key), BigInt(e), BigInt(n)).toString()
+      const res = await register(username, sm4Res, uuid, RSARes).catch(err => { openWarning("注册错误"); console.warn(err); return })
+      if (!res) {
+        openWarning("注册错误")
+        return
+      }
+      if (res.data.status) {
+        localStorage.setItem("access-token", res.data.data)
+        openSuccess("注册成功")
+        router.push("/")
+      } else {
+        openWarning("注册失败")
+      }
     } else {
       return
     }
   })
 }
 
-
-//忘记密码
-const forgetPwd = () => {
-  dialogFormVisible.value = true
-
-}
-const dialogFormVisible = ref(false)
-const formLabelWidth = '140px'
-//验证码倒计时
-const yzmBtnText = ref<string>('')
-const yzmBtnDisabled = ref(false)
-let timer = ref()
-const yzmCount = () => {
-  yzmBtnDisabled.value = true
-  let count = 60
-  yzmBtnText.value = count + 's'
-  clearInterval(timer.value)
-  timer.value = setInterval(() => {
-    count -= 1
-    yzmBtnText.value = count + 's'
-    if (count <= 0) {
-      clearInterval(timer.value)
-      yzmBtnText.value = "获取验证码"
-      yzmBtnDisabled.value = false
+const modPow = (base: bigint, exponent: bigint, modulus: bigint) => {
+  let result = 1n;
+  base = base % modulus;
+  while (exponent > 0) {
+    if (exponent % 2n === 1n) {
+      result = (result * base) % modulus;
     }
-  }, 1000)
-
+    exponent = exponent >> 1n;
+    base = (base * base) % modulus;
+  }
+  return Number(result);
 }
-const form = reactive({
-  phone: '',
-  yzm: '',
-  pwd: ''
-})
+
+const randomSM4Key = () => {
+  let firstDigit = Math.floor(Math.random() * 15) + 1;
+  let firstHex = firstDigit.toString(16);
+
+  // 生成剩余的15个16进制数
+  let remainingHex = Array.from({ length: 15 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+  // 返回拼接后的字符串
+  return firstHex + remainingHex;
+}
+
+// //忘记密码
+// const forgetPwd = () => {
+//   dialogFormVisible.value = true
+
+// }
+// const dialogFormVisible = ref(false)
+// const formLabelWidth = '140px'
+// //验证码倒计时
+// const yzmBtnText = ref<string>('')
+// const yzmBtnDisabled = ref(false)
+// let timer = ref()
+// const yzmCount = () => {
+//   yzmBtnDisabled.value = true
+//   let count = 60
+//   yzmBtnText.value = count + 's'
+//   clearInterval(timer.value)
+//   timer.value = setInterval(() => {
+//     count -= 1
+//     yzmBtnText.value = count + 's'
+//     if (count <= 0) {
+//       clearInterval(timer.value)
+//       yzmBtnText.value = "获取验证码"
+//       yzmBtnDisabled.value = false
+//     }
+//   }, 1000)
+
+// }
+// const form = reactive({
+//   phone: '',
+//   yzm: '',
+//   pwd: ''
+// })
 onMounted(() => {
-  yzmBtnText.value = "获取验证码"
+
 })
 
 
