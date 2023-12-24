@@ -14,6 +14,7 @@
 
       <el-form-item>
         <el-button type="primary">查询</el-button>
+        <slot name="button"></slot>
       </el-form-item>
     </el-form>
 

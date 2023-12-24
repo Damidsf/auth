@@ -12,12 +12,13 @@ export const getUserInfo = () => {
 
 //登录
 export const login = (username: string, password: string, uuid: string, key: string) => {
+  // console.log({ username, password, uuid, key });
   return serverAxios.post("/doLogin", { username, password, uuid, key })
 }
 
 //注册
 export const register = (username: string, password: string, uuid: string, key: string) => {
-  return serverAxios.post("/doLogin", { username, password, uuid, key })
+  return serverAxios.post("/register", { username, password, uuid, key })
 }
 
 //获取权限信息
@@ -50,7 +51,23 @@ export const updateUserInfo = (username: string, phone: string) => {
   return serverAxios.post("/user/updateInfo", { username, phone })
 }
 
+//获取code
+export const getCode = () => {
+  return serverAxios.get("/oauth2/authorize", { params: { response_type: "code", client_id: "my_client", scope: "read", redirect_uri: "http://www.baidu.com" } }).catch((err: Error) => {
+    console.log("报错信息", err);
 
+  })
+}
+
+//获取token
+export const getToken = () => {
+  return serverAxios.post("/oauth2/token", {
+    grant_type: "authorization_code", code: "tw8VTBfMpy8XTk0Nc093VxLJG6gL5DHvWymZb33TAKCgNNNjCRiDpLuXHG_UUEu7AWGTWXQTNIfDEbXhiUTKa69JeF33QVeBKtDdMN8CAdAPQuLX3brL3GxbK7-0R0bA", redirect_uri: "http://www.baidu.com"
+  }).catch((err: Error) => {
+    console.log("报错信息", err);
+
+  })
+}
 
 
 

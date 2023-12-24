@@ -100,26 +100,43 @@ onBeforeMount(async () => {
 })
 const userData = ref()
 const _getUserInfo = async () => {
-  const res = await getUserInfo().catch(err => console.warn(err))
+  const res = await getUserInfo().catch(err => {
+    console.log("未成功获取数据", err);
+  })
   if (!res) return
+  console.log(res.data);
+
   if (res.data.status) {
     userData.value = res.data.data
     console.log("获取用户数据", res.data.data);
-
+    store.isLogin = true
+    store.userData = res.data.data
   }
 
 }
 
 const userAuth = ref("")
 const _getAuthorities = async () => {
-  const res = await getAuthorities().catch(err => console.warn(err))
+  const res = await getAuthorities().catch(err => {
+    console.log("未成功获取数据", err);
+  })
+
+  //测试+
+  store.isAdmain = true
+  store.isLogin = true
+  router.push("/home/adminApplycation")
+  // router.push("/home/userApplication")
+
   if (!res) return
+  console.log(res.data);
   if (res.data.status) {
-    userAuth.value = res.data.data[0]
+    userAuth.value = res.data.data[0].authority
     if (userAuth.value == "ROLE_ADMIN") {
       store.isAdmain = true
+      router.push("/home/adminApplycation")
     } else {
       store.isAdmain = false
+      router.push("/home/userApplication")
     }
 
 
@@ -130,13 +147,7 @@ const _getAuthorities = async () => {
 }
 const store = useStore()
 onMounted(async () => {
-  if (store.isLogin) {
-    if (store.isAdmain) {
-      router.push("/home/adminApplycation")
-    } else {
-      router.push("/home/userApplication")
-    }
-  }
+
 })
 
 //切换tab 
@@ -150,6 +161,8 @@ const changeTab = (index: string) => {
 watch(() => store.isAdmain, () => {
 
 })
+
+
 </script>
 <style lang='scss' scoped>
 .body {

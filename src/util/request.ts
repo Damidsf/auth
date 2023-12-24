@@ -11,8 +11,9 @@ serverAxios.interceptors.request.use((config) => {
 
   if (token) {
     config.headers["token"] = token
-  }
 
+  }
+  config.headers.Authorization = "Basic bXlfY2xpZW50OjEyMzQ1Ng=="
   return config
 })
 

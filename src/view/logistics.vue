@@ -11,12 +11,12 @@ import { logout } from "@/api/index"
 import { useRouter } from "vue-router"
 import { ElMessage } from 'element-plus'
 
-const openWarning = (text: string) => {
-  ElMessage({
-    message: text,
-    type: 'warning',
-  })
-}
+// const openWarning = (text: string) => {
+//   ElMessage({
+//     message: text,
+//     type: 'warning',
+//   })
+// }
 const openSuccess = (text: string) => {
   ElMessage({
     message: text,
@@ -25,13 +25,9 @@ const openSuccess = (text: string) => {
 }
 const router = useRouter()
 const exit = async () => {
-  const { data } = await logout()
+  await logout()
   localStorage.removeItem("access-token")
-  if (data.code == 200) {
-    openSuccess(data.message)
-  } else {
-    openWarning(data.message)
-  }
+  openSuccess("成功退出登录")
   router.push("/")
 
 }
